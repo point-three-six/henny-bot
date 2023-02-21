@@ -5,7 +5,11 @@
 #include <psapi.h>
 using namespace std;
 
-void getProcessHandle(HANDLE* handle) {
+/* offsets */
+const int GAME_POINTER_OFFSET = 0x1F440;
+const int PLAYER_HEALTH_OFFSET = 0x4;
+
+void getProcessHandle(HANDLE *pHandle, HMODULE *pHmod) {
     const wchar_t targetName[] = TEXT("BloogGame.exe");
     DWORD processIds[1024], cbNeeded;
     unsigned int i;
@@ -26,8 +30,9 @@ void getProcessHandle(HANDLE* handle) {
                     if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded)) {
                         if (GetModuleBaseName(hProcess, hMod, modName, sizeof(modName) / sizeof(wchar_t))) {
                             if (wcscmp(targetName, modName) == 0) {
-                                wcout << modName;
-                                *handle = hProcess;
+                                wcout << modName << '\n';
+                                *pHandle = hProcess;
+                                *pHmod = hMod;
                                 return;
                             }
                         }
@@ -42,16 +47,21 @@ void getProcessHandle(HANDLE* handle) {
 
 int main()
 {
-    cout << "HennyBot\n";
-
     HANDLE hProcess = NULL;
+    HMODULE hMod = NULL;
 
-    getProcessHandle(&hProcess);
+    getProcessHandle(&hProcess, &hMod);
 
     if (hProcess == NULL) {
         cout << "Target was not found.\n";
         return 1;
     }
+
+    cout << "Base addr\t" << hMod << '\n';
+
+    void* gameObjAddr = hMod + GAME_POINTER_OFFSET;
+
+    cout << "Game obj addr\t" << gameObjAddr;
 
     return 0;
 }
